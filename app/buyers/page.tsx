@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Papa from "papaparse";
 import Link from "next/link";
 
 type Buyer = {
@@ -45,6 +46,9 @@ export default function BuyersPage() {
 
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState(search);
+
+  const [csvFile, setCsvFile] = useState<File | null>(null);
+  const [csvMessage, setCsvMessage] = useState("");
 
   const [filters, setFilters] = useState({
     city: "",
@@ -124,6 +128,32 @@ export default function BuyersPage() {
     fetchBuyers();
   }, [debouncedSearch, filters, page, sortBy, sortDir]);
 
+  const handleCSVUpload = async () => {
+  if (!csvFile) return;
+  try {
+    const token = localStorage.getItem("token");
+    const formData = new FormData();
+    formData.append("file", csvFile);
+
+    const res = await fetch("/api/buyers/import", {
+      method: "POST",
+      body: formData,
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Failed to import buyers");
+
+    setCsvMessage(`✅ ${data.message}`);
+    setCsvFile(null);
+    fetchBuyers(); 
+  } catch (err: any) {
+    setCsvMessage(err.message);
+  }
+};
+
   const handlePageChange = (newPage: number) => {
     if (newPage < 1 || newPage > totalPages) return;
     setPage(newPage);
@@ -176,6 +206,24 @@ export default function BuyersPage() {
           Add Buyer
         </button>
       </div>
+
+      <div className="flex items-center gap-4 mb-6">
+        <input
+            type="file"
+            accept=".csv"
+            onChange={(e) => setCsvFile(e.target.files?.[0] || null)}
+            className="border p-2 rounded-md"
+        />
+        <button
+            onClick={handleCSVUpload}
+            disabled={!csvFile}
+            className="bg-green-600 text-white px-4 py-2 rounded-md disabled:opacity-50"
+        >
+            Import CSV
+        </button>
+        {csvMessage && <span className="text-sm text-gray-600">{csvMessage}</span>}
+        </div>
+
 
       <div className="flex flex-wrap gap-4 mb-6">
         <input
