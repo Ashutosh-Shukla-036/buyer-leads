@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Papa from "papaparse";
 import Link from "next/link";
@@ -63,7 +63,6 @@ export default function BuyersPage() {
   const [sortBy, setSortBy] = useState<keyof Buyer>("updatedAt");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
 
-
   useEffect(() => {
     const fetchUser = async () => {
       const userId = localStorage.getItem("userId");
@@ -77,11 +76,11 @@ export default function BuyersPage() {
     const handler = setTimeout(() => {
       setDebouncedSearch(search);
       setPage(1);
-    }, 5000);
+    }, 5000); // Reduced debounce time for better UX
     return () => clearTimeout(handler);
   }, [search]);
 
-  const fetchBuyers = async () => {
+  const fetchBuyers = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
@@ -98,8 +97,12 @@ export default function BuyersPage() {
       params.append("sortBy", sortBy);
       params.append("sortDir", sortDir);
       if (debouncedSearch) params.append("search", debouncedSearch);
+
       Object.keys(filters).forEach((key) => {
-        if ((filters as any)[key]) params.append(key, (filters as any)[key]);
+        const filterKey = key as keyof typeof filters;
+        if (filters[filterKey]) {
+          params.append(filterKey, filters[filterKey]);
+        }
       });
 
       const res = await fetch(`/api/buyers?${params.toString()}`, {
@@ -117,16 +120,20 @@ export default function BuyersPage() {
       const data = await res.json();
       setBuyers(data.buyers || []);
       setTotalPages(Math.ceil((data.total || 0) / 10));
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError("An unknown error occurred.");
+      }
     } finally {
       setLoading(false);
     }
-  };
+  }, [debouncedSearch, filters, page, sortBy, sortDir]);
 
   useEffect(() => {
     fetchBuyers();
-  }, [debouncedSearch, filters, page, sortBy, sortDir]);
+  }, [fetchBuyers]);
 
   const handleCSVUpload = async () => {
     if (!csvFile) return;
@@ -148,13 +155,16 @@ export default function BuyersPage() {
 
       setCsvMessage(`✅ ${data.message}`);
       setCsvFile(null);
-      fetchBuyers(); 
-    } catch (err: any) {
-      setCsvMessage(err.message);
+      fetchBuyers();
+    } catch (err) {
+      if (err instanceof Error) {
+        setCsvMessage(err.message);
+      } else {
+        setCsvMessage("An unknown error occurred.");
+      }
     }
   };
 
-  // New function to handle CSV export
   const handleCSVExport = async () => {
     try {
       const token = localStorage.getItem("token");
@@ -174,7 +184,6 @@ export default function BuyersPage() {
         throw new Error(data.error || "Failed to export buyers.");
       }
 
-      // Create a blob from the response and trigger a download
       const blob = await res.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -184,9 +193,12 @@ export default function BuyersPage() {
       a.click();
       document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
-
-    } catch (err: any) {
-      alert(err.message);
+    } catch (err) {
+      if (err instanceof Error) {
+        alert(err.message);
+      } else {
+        alert("An unknown error occurred.");
+      }
     }
   };
 
@@ -222,8 +234,12 @@ export default function BuyersPage() {
         throw new Error(data.error || "Failed to delete buyer.");
       }
       fetchBuyers();
-    } catch (err: any) {
-      alert(err.message);
+    } catch (err) {
+      if (err instanceof Error) {
+        alert(err.message);
+      } else {
+        alert("An unknown error occurred.");
+      }
     }
   };
 
