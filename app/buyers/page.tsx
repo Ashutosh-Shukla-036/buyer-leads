@@ -129,30 +129,66 @@ export default function BuyersPage() {
   }, [debouncedSearch, filters, page, sortBy, sortDir]);
 
   const handleCSVUpload = async () => {
-  if (!csvFile) return;
-  try {
-    const token = localStorage.getItem("token");
-    const formData = new FormData();
-    formData.append("file", csvFile);
+    if (!csvFile) return;
+    try {
+      const token = localStorage.getItem("token");
+      const formData = new FormData();
+      formData.append("file", csvFile);
 
-    const res = await fetch("/api/buyers/import", {
-      method: "POST",
-      body: formData,
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
+      const res = await fetch("/api/buyers/import", {
+        method: "POST",
+        body: formData,
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || "Failed to import buyers");
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to import buyers");
 
-    setCsvMessage(`✅ ${data.message}`);
-    setCsvFile(null);
-    fetchBuyers(); 
-  } catch (err: any) {
-    setCsvMessage(err.message);
-  }
-};
+      setCsvMessage(`✅ ${data.message}`);
+      setCsvFile(null);
+      fetchBuyers(); 
+    } catch (err: any) {
+      setCsvMessage(err.message);
+    }
+  };
+
+  // New function to handle CSV export
+  const handleCSVExport = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        alert("You must be logged in to export data.");
+        return;
+      }
+
+      const res = await fetch("/api/buyers/export", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Failed to export buyers.");
+      }
+
+      // Create a blob from the response and trigger a download
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "buyers.csv";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+
+    } catch (err: any) {
+      alert(err.message);
+    }
+  };
 
   const handlePageChange = (newPage: number) => {
     if (newPage < 1 || newPage > totalPages) return;
@@ -199,12 +235,20 @@ export default function BuyersPage() {
     <div className="min-h-screen bg-white text-black p-8">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">Buyer Leads</h1>
-        <button
-          onClick={() => router.push("/buyers/new")}
-          className="bg-black text-white px-5 py-2 rounded-lg hover:bg-gray-800 transition"
-        >
-          Add Buyer
-        </button>
+        <div className="flex space-x-4">
+          <button
+            onClick={handleCSVExport}
+            className="bg-gray-600 text-white px-5 py-2 rounded-lg hover:bg-gray-700 transition"
+          >
+            Export CSV
+          </button>
+          <button
+            onClick={() => router.push("/buyers/new")}
+            className="bg-black text-white px-5 py-2 rounded-lg hover:bg-gray-800 transition"
+          >
+            Add Buyer
+          </button>
+        </div>
       </div>
 
       <div className="flex items-center gap-4 mb-6">
@@ -219,10 +263,10 @@ export default function BuyersPage() {
             disabled={!csvFile}
             className="bg-green-600 text-white px-4 py-2 rounded-md disabled:opacity-50"
         >
-            Import CSV
+          Import CSV
         </button>
         {csvMessage && <span className="text-sm text-gray-600">{csvMessage}</span>}
-        </div>
+      </div>
 
 
       <div className="flex flex-wrap gap-4 mb-6">
