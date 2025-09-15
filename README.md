@@ -3,21 +3,20 @@
 # A full-stack Next.js + Prisma + PostgreSQL project for managing buyer records
 
 # 🚀 Features Implemented
-# - Add Authentication 
-# - Add Buyer with details like name, phone, email, property type, budget, etc.
+# - Added Authentication 
+# - Added Buyer with details like name, phone, email, property type, budget, etc.
 # - Search buyers by name, phone, or email
 # - Filter buyers by city, property type, BHK, timeline, purpose, source, status
 # - Update buyers with all changes saved in history table
 # - Delete buyers from the system
 # - CSV import with multiple buyer records
-# - Add Export to CSV feature
+# - Added Export to CSV feature
 # - History tracking (backend ready)
 
 # 📂 Tech Stack
 # Frontend → Next.js (App Router) + TailwindCSS
 # Backend → Next.js API Routes
 # Database → PostgreSQL with Prisma ORM
-# UI Components → ShadCN (form, dropdowns, modal)
 
 # 🛠️ Installation & Setup
 
