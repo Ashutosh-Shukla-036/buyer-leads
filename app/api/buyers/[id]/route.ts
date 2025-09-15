@@ -19,9 +19,7 @@ const buyerUpdateSchema = z.object({
   purpose: z.enum(["Buy", "Rent"]).optional(),
   budgetMin: z.number().min(0).optional(),
   budgetMax: z.number().min(0).optional(),
-  timeline: z
-    .enum(["_0_3m", "_3_6m", "_6m_plus", "Exploring"])
-    .optional(),
+  timeline: z.enum(["_0_3m", "_3_6m", "_6m_plus", "Exploring"]).optional(),
   source: z
     .enum(["Website", "Referral", "Walk_in", "Call", "Other"])
     .optional(),
@@ -38,44 +36,43 @@ const buyerUpdateSchema = z.object({
     .optional(),
   notes: z.string().max(1000).optional(),
   tags: z.array(z.string()).optional(),
-  updatedAt: z.string(), // for concurrency check
+  updatedAt: z.string(), // concurrency check
 });
 
-// Helper function to format Zod validation errors
+// format Zod errors nicely
 function formatZodErrors(issues: ZodIssue[]): string {
-  const errors = issues.map((issue) => {
-    const field = issue.path[0];
-    const fieldName = typeof field === "string" ? field : "Unknown Field";
-    let message = issue.message;
+  return issues
+    .map((issue) => {
+      const field = issue.path[0];
+      const fieldName = typeof field === "string" ? field : "Unknown Field";
+      let message = issue.message;
 
-    switch (issue.code) {
-      case "too_small":
-        // The issue object for "too_small" has a 'minimum' property
-        message = `Too small, must have at least ${issue.minimum} characters.`;
-        break;
-      case "invalid_type":
-        // Type guard: Check if the issue is of type 'ZodIssueInvalidType'
-        if ("received" in issue) {
-          message = `Invalid type. Expected a ${issue.expected}, but got a ${issue.received}.`;
-        }
-        break;
-      case "too_big":
-        // The issue object for "too_big" has a 'maximum' property
-        message = `Too large, must be less than ${issue.maximum}.`;
-        break;
-      default:
-        message = issue.message;
-    }
+      switch (issue.code) {
+        case "too_small":
+          message = `Too small, must have at least ${issue.minimum} characters.`;
+          break;
+        case "invalid_type":
+          if ("received" in issue) {
+            message = `Invalid type. Expected ${issue.expected}, got ${issue.received}.`;
+          }
+          break;
+        case "too_big":
+          message = `Too large, must be less than ${issue.maximum}.`;
+          break;
+        default:
+          message = issue.message;
+      }
 
-    const formattedField = fieldName.charAt(0).toUpperCase() + fieldName.slice(1);
-    return `${formattedField}: ${message}`;
-  });
-  return errors.join(" | ");
+      const formattedField =
+        fieldName.charAt(0).toUpperCase() + fieldName.slice(1);
+      return `${formattedField}: ${message}`;
+    })
+    .join(" | ");
 }
 
-// GET Buyer by ID
+// ---------------- GET ----------------
 export async function GET(
-  req: Request,
+  _req: Request,
   context: { params: Promise<{ id: string }> }
 ) {
   const { id } = await context.params;
@@ -104,7 +101,6 @@ export async function GET(
   return NextResponse.json({ ...buyer, history: formattedHistory });
 }
 
-// UPDATE Buyer
 export async function PUT(
   req: Request,
   context: { params: Promise<{ id: string }> }
@@ -124,7 +120,6 @@ export async function PUT(
     }
 
     const body = await req.json();
-
     const parsedResult = buyerUpdateSchema.safeParse(body);
     if (!parsedResult.success) {
       const formattedErrors = formatZodErrors(parsedResult.error.issues);
@@ -137,7 +132,6 @@ export async function PUT(
     if (!existing) {
       return NextResponse.json({ error: "Buyer not found" }, { status: 404 });
     }
-
     if (existing.ownerId !== user.userId) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
@@ -153,7 +147,8 @@ export async function PUT(
     }
 
     if (
-      (parsed.propertyType === "Apartment" || parsed.propertyType === "Villa") &&
+      (parsed.propertyType === "Apartment" ||
+        parsed.propertyType === "Villa") &&
       !parsed.bhk
     ) {
       return NextResponse.json(
@@ -161,14 +156,15 @@ export async function PUT(
         { status: 400 }
       );
     }
-
-    if (parsed.budgetMin !== undefined && parsed.budgetMax !== undefined) {
-      if (parsed.budgetMax < parsed.budgetMin) {
-        return NextResponse.json(
-          { error: "Maximum budget must be greater than or equal to minimum budget." },
-          { status: 400 }
-        );
-      }
+    if (
+      parsed.budgetMin !== undefined &&
+      parsed.budgetMax !== undefined &&
+      parsed.budgetMax < parsed.budgetMin
+    ) {
+      return NextResponse.json(
+        { error: "Maximum budget must be >= minimum budget." },
+        { status: 400 }
+      );
     }
 
     const timelineMap: Record<string, Timeline> = {
@@ -181,10 +177,10 @@ export async function PUT(
       ? timelineMap[parsed.timeline]
       : undefined;
 
-    const updateData: any = {
+    const updateData = {
       ...parsed,
       timeline: timelineValue,
-    };
+    } as any;
     delete updateData.updatedAt;
 
     const updated = await prisma.buyer.update({
@@ -192,7 +188,7 @@ export async function PUT(
       data: updateData,
     });
 
-    const diff: any = {};
+    const diff: Record<string, any> = {};
     Object.keys(updateData).forEach((key) => {
       if ((existing as any)[key] !== (updated as any)[key]) {
         diff[key] = {
@@ -213,16 +209,21 @@ export async function PUT(
     }
 
     return NextResponse.json(updated, { status: 200 });
-  } catch (err: any) {
-    console.error("API Error:", err);
-    return NextResponse.json({ error: "An unexpected error occurred." }, { status: 500 });
+  } catch (err) {
+    console.error("PUT Error:", err);
+    return NextResponse.json(
+      { error: "An unexpected error occurred." },
+      { status: 500 }
+    );
   }
 }
 
-// DELETE Buyer
-export async function DELETE( req: Request, context: { params: { id: string } }) {
-    try {
-    const { id } = context.params;
+export async function DELETE(
+  req: Request,
+  context: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await context.params;
 
     const authHeader = req.headers.get("authorization");
     const token = authHeader?.split(" ")[1];
@@ -238,14 +239,11 @@ export async function DELETE( req: Request, context: { params: { id: string } })
     if (!existing) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
-
     if (existing.ownerId !== user.userId) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    // Use a transaction to ensure both operations are atomic
     await prisma.$transaction(async (tx) => {
-      // 1. Create the history record first, before the buyer is deleted.
       await tx.buyerHistory.create({
         data: {
           buyerId: existing.id,
@@ -253,15 +251,15 @@ export async function DELETE( req: Request, context: { params: { id: string } })
           diff: { deleted: existing },
         },
       });
-
-      // 2. Then, delete the buyer record. The `onDelete: SetNull` or `onDelete: Cascade`
-      //    you've configured will handle the foreign key.
       await tx.buyer.delete({ where: { id } });
     });
 
     return NextResponse.json({ success: true });
   } catch (err) {
-    console.error("Deletion Error:", err);
-    return NextResponse.json({ error: "An unexpected error occurred." }, { status: 500 });
+    console.error("DELETE Error:", err);
+    return NextResponse.json(
+      { error: "An unexpected error occurred." },
+      { status: 500 }
+    );
   }
 }
