@@ -11,7 +11,7 @@ export default function RegisterPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setIsLoading(true); // Start loading
+    setIsLoading(true); 
 
     try {
       const res = await fetch("/api/auth/register", {
@@ -25,7 +25,7 @@ export default function RegisterPage() {
         localStorage.setItem("token", data.token);
         localStorage.setItem("userId", data.userId);
         alert("Registered successfully!");
-        router.push("/buyers");
+        router.push("/login");
       } else {
         alert(`Error: ${data.error}`);
       }

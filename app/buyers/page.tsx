@@ -76,7 +76,7 @@ export default function BuyersPage() {
     const handler = setTimeout(() => {
       setDebouncedSearch(search);
       setPage(1);
-    }, 500); // Reduced debounce time for better UX
+    }, 5000); 
     return () => clearTimeout(handler);
   }, [search]);
 
