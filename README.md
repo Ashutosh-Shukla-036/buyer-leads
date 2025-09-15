@@ -1,36 +1,51 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🏠 Buyer Management System
 
-## Getting Started
+# A full-stack Next.js + Prisma + PostgreSQL project for managing buyer records
 
-First, run the development server:
+# 🚀 Features Implemented
+# - Added Authentication 
+# - Added Buyer with details like name, phone, email, property type, budget, etc.
+# - Search buyers by name, phone, or email
+# - Filter buyers by city, property type, BHK, timeline, purpose, source, status
+# - Update buyers with all changes saved in history table
+# - Delete buyers from the system
+# - CSV import with multiple buyer records
+# - Added Export to CSV feature
+# - History tracking (backend ready)
 
-```bash
+# 📂 Tech Stack
+# Frontend → Next.js (App Router) + TailwindCSS
+# Backend → Next.js API Routes
+# Database → PostgreSQL with Prisma ORM
+
+# 🛠️ Installation & Setup
+
+# 1. Clone the repo
+git clone https://github.com/Ashutosh-Shukla-036/buyer-leads
+cd buyer-leads
+
+# 2. Install dependencies
+npm install
+
+# 3. Setup environment (add to .env file)
+echo 'DATABASE_URL="postgresql://user:password@localhost:5432/buyerdb"' > .env
+
+# 4. Run migrations
+npx prisma migrate dev
+
+# 5. Start development server
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+# 📌 CSV Import Format
+# The CSV file must strictly follow this format:
+# fullName,phone,email,city,propertyType,bhk,budgetMin,budgetMax,timeline,purpose,source,status
+# Example:
+# John Doe,9876543210,john@example.com,Bangalore,Apartment,2,5000000,7000000,ZERO_TO_THREE,Investment,Online,New
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+# ⚠️ Limitations (To-Do)
+# - Testing → We did not write unit/integration tests yet
+# - History Page → Not built, but all updates are stored in DB under history table
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+# 👨‍💻 Authors
+# - Ashutosh Shukla (Project Lead)
