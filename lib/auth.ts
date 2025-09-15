@@ -23,3 +23,11 @@ export async function hashPassword(password: string) {
 export async function comparePassword(password: string, hash: string) {
   return bcrypt.compare(password, hash);
 }
+
+export function getUserFromToken(token: string) {
+  try {
+    return jwt.verify(token, JWT_SECRET) as { userId: string; email: string };
+  } catch {
+    return null;
+  }
+}

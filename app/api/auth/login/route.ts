@@ -27,7 +27,8 @@ export async function POST(req: Request) {
 
     const token = signJwt({ userId: user.id, email: user.email });
 
-    return NextResponse.json({ token });
+    // Return both the token and the user's ID
+    return NextResponse.json({ token, userId: user.id });
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 400 });
   }
