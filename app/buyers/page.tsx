@@ -76,7 +76,7 @@ export default function BuyersPage() {
     const handler = setTimeout(() => {
       setDebouncedSearch(search);
       setPage(1);
-    }, 5000); // Reduced debounce time for better UX
+    }, 500); // Reduced debounce time for better UX
     return () => clearTimeout(handler);
   }, [search]);
 
@@ -98,6 +98,7 @@ export default function BuyersPage() {
       params.append("sortDir", sortDir);
       if (debouncedSearch) params.append("search", debouncedSearch);
 
+      // Fix for `any` type and type assertion for filters
       Object.keys(filters).forEach((key) => {
         const filterKey = key as keyof typeof filters;
         if (filters[filterKey]) {
